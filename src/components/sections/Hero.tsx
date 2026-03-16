@@ -14,7 +14,7 @@ const Hero = () => {
         >
           <div className="absolute inset-0 bg-primary/20 blur-3xl rounded-full -z-10 animate-pulse" />
           <Avatar className="w-32 h-32 border-4 border-white shadow-xl">
-            <AvatarImage src="https://miaoda-site-img.cdn.bcebos.com/images/MiaoTu_6673fd1e-fd35-4ea6-a26b-03795e6e678f.jpg" alt="成橙妈妈" className="object-cover" />
+            <AvatarImage src="https://miaoda-site-img.cdn.bcebos.com/images/baidu_image_search_142b31e3-5499-4836-8b12-91adc8f58f41.jpg" alt="成橙妈妈" className="object-cover" />
             <AvatarFallback className="bg-primary text-primary-foreground text-3xl font-bold">CC</AvatarFallback>
           </Avatar>
         </motion.div>

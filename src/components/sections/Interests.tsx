@@ -33,7 +33,7 @@ const Interests = () => {
           >
             <Badge
               variant="secondary"
-              className="px-6 py-3 text-base rounded-full border border-primary/20 bg-muted/80 shadow-sm transition-all hover:bg-primary/10 hover:border-primary"
+              className="px-6 py-3 text-base rounded-full shadow-sm transition-all hover:bg-primary/10 hover:border-primary border-dashed border-[rgba(41,153,163,0.2)] bg-[#0d3b3f1a] bg-none border-[1px] border-[rgba(41,153,163,0.2)]"
             >
               {item.icon}
               {item.name}

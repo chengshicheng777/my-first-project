@@ -48,13 +48,7 @@ const Home = () => {
             </div>
           </motion.div>
           
-          <div className="bg-muted/30 py-16 mt-12">
-             <div className="max-w-4xl mx-auto px-6 mb-12 text-center">
-                <h2 className="text-3xl font-bold mb-4">数字分身</h2>
-                <p className="text-muted-foreground">有些好奇的事？不如直接问问我的数字分身，它会全天候为你解答关于我的一切。</p>
-             </div>
-             <DigitalChat />
-          </div>
+          <DigitalChat />
         </div>
       </main>
 
