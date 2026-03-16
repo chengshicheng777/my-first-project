@@ -13,7 +13,7 @@ const Interests = () => {
   ];
 
   return (
-    <section className="py-12 px-6 max-w-4xl mx-auto">
+    <section className="py-12 px-6 max-w-4xl mx-auto ml-[6px] mr-[16px] mt-[2px] mb-[2px]">
       <motion.h2
         initial={{ opacity: 0 }}
         whileInView={{ opacity: 1 }}

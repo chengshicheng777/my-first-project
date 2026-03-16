@@ -32,7 +32,7 @@ const Bio = () => {
   ];
 
   return (
-    <section className="py-12 px-6 max-w-4xl mx-auto">
+    <section className="py-12 px-6 max-w-4xl mx-auto ml-[6px] mr-[6px] mt-[5px] mb-[5px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {cards.map((card, idx) => (
           <motion.div

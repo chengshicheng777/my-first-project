@@ -2,13 +2,14 @@ import React from 'react';
 import Hero from '@/components/sections/Hero';
 import Bio from '@/components/sections/Bio';
 import Interests from '@/components/sections/Interests';
+import Portfolio from '@/components/sections/Portfolio';
 import DigitalChat from '@/components/sections/DigitalChat';
 import { motion } from 'motion/react';
 
 const Home = () => {
   return (
     <div className="min-h-screen bg-background selection:bg-primary/20">
-      <main className="pb-24">
+      <main className="pb-24 ml-[6px] mr-[16px] mt-[1px] mb-[1px]">
         <Hero />
         
         <div className="container mx-auto">
@@ -31,6 +32,15 @@ const Home = () => {
           <Interests />
           
           <motion.div
+            initial={{ opacity: 0 }}
+            whileInView={{ opacity: 1 }}
+            viewport={{ once: true }}
+            className="w-24 h-1 bg-primary/20 mx-auto my-8 rounded-full"
+          />
+          
+          <Portfolio />
+          
+          <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -51,7 +61,6 @@ const Home = () => {
           <DigitalChat />
         </div>
       </main>
-
       <footer className="py-12 border-t bg-muted/50 text-center text-sm text-muted-foreground">
         <div className="container mx-auto px-6">
           <p className="mb-2">© 2026 成橙妈妈 · 一个正在成长的妈妈</p>
