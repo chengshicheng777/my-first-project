@@ -4,8 +4,9 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Send, User, MessageCircle, X, Minimize2, MessageSquareText } from 'lucide-react';
+import { Send, MessageCircle, X } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { supabase } from '@/db/supabase';
 
 const AVATAR_URL = "https://miaoda-site-img.cdn.bcebos.com/images/baidu_image_search_142b31e3-5499-4836-8b12-91adc8f58f41.jpg";
 
@@ -15,37 +16,20 @@ const PRESET_QUESTIONS = [
   "怎么能联系上你？",
 ];
 
-const BOT_DATA = {
-  identity: "我是成橙妈妈的AI分身，一名专注3-6岁孩子成长的内容创作者✨",
-  responses: [
-    {
-      keywords: ["关系", "亲子", "孩子", "教育", "沟通"],
-      reply: "哈喽！关于3-6岁孩子的亲子关系，我的心得是：这个阶段的孩子更需要‘平等的陪伴’和‘清晰的边界感’。可以尝试每天空出15分钟的高质量陪伴（放下手机的那种哦！）。我在小红书上也分享过具体的‘共情沟通法’，感兴趣可以关注我看看，一起科学育儿不焦虑~ 💪"
-    },
-    {
-      keywords: ["最近", "忙", "作品", "做", "内容", "什么"],
-      reply: "最近我正沉浸在AI育儿的探索中哦！🤖 正在整理一套关于‘AI如何辅助3-6岁孩子表达力’的作品集，也会在B站同步我的学习心得。我的主页上这些模块其实就是我最近的‘成果展示’，希望能带给你一些启发！🌟"
-    },
-    {
-      keywords: ["联系", "合作", "私信", "找到", "关注"],
-      reply: "太棒了！很高兴能认识志同道合的朋友。你可以直接在小红书或B站搜索‘成橙妈妈’关注我，那里私信我最快哦！如果是深度交流或内容合作，欢迎私信留言，看到后我会第一时间回复哒~ 📩"
-    },
-    {
-      keywords: ["AI", "未来", "科技"],
-      reply: "AI对孩子未来的影响是我非常关注的话题。我认为我们不应该排斥它，而是要教会孩子如何‘掌控’AI。我正在尝试用AI工具为孩子创造更有趣的成长素材，欢迎一起交流探讨！🚀"
-    }
-  ],
-  fallback: "哎呀，这个问题我还在‘进化’中，暂时给不出最完美的答案呢~ 不过你可以问问我关于‘亲子关系’、‘我的近期作品’或者‘如何联系我’，这些我可是很有发言权的！✨"
-};
+interface Message {
+  role: 'user' | 'assistant';
+  content: string;
+}
 
 const DigitalChat = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [messages, setMessages] = useState<{ role: 'bot' | 'user'; content: string }[]>([
-    { role: 'bot', content: "嗨！我是成橙妈妈的AI分身。终于等到你啦，想聊聊孩子成长、AI科技或是我的自媒体心得吗？😊" }
+  const [messages, setMessages] = useState<Message[]>([
+    { role: 'assistant', content: "嗨！我是成橙妈妈的AI分身。终于等到你啦，想聊聊孩子成长、AI科技或是我的自媒体心得吗？😊" }
   ]);
   const [input, setInput] = useState("");
   const [isTyping, setIsTyping] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -53,27 +37,102 @@ const DigitalChat = () => {
     }
   }, [messages, isTyping]);
 
-  const handleSend = (text: string) => {
+  const handleSend = async (text: string) => {
     if (!text.trim() || isTyping) return;
 
-    setMessages(prev => [...prev, { role: 'user', content: text }]);
+    const userMessage: Message = { role: 'user', content: text };
+    setMessages(prev => [...prev, userMessage]);
     setInput("");
     setIsTyping(true);
 
-    setTimeout(() => {
-      let finalReply = BOT_DATA.fallback;
-      const lowerText = text.toLowerCase();
+    // 取消之前的请求
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    abortControllerRef.current = new AbortController();
 
-      for (const item of BOT_DATA.responses) {
-        if (item.keywords.some(kw => lowerText.includes(kw))) {
-          finalReply = item.reply;
-          break;
+    try {
+      // 准备发送给API的消息历史
+      const apiMessages = [...messages, userMessage].map(msg => ({
+        role: msg.role === 'assistant' ? 'assistant' : 'user',
+        content: msg.content
+      }));
+
+      // 直接调用Edge Function获取流式响应
+      const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+      const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+      const functionUrl = `${supabaseUrl}/functions/v1/chat-bot`;
+      const response = await fetch(functionUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+        },
+        body: JSON.stringify({ messages: apiMessages }),
+        signal: abortControllerRef.current.signal,
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('API调用失败:', errorText);
+        throw new Error(`HTTP ${response.status}: ${errorText}`);
+      }
+
+      const reader = response.body?.getReader();
+      const decoder = new TextDecoder();
+      let accumulatedContent = '';
+
+      // 添加一个空的助手消息用于累积内容
+      setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+
+      while (true) {
+        const { done, value } = await reader!.read();
+        if (done) break;
+
+        const chunk = decoder.decode(value);
+        const lines = chunk.split('\n').filter(line => line.trim());
+
+        for (const line of lines) {
+          if (line.startsWith('data: ')) {
+            const data = line.slice(6);
+            if (data === '[DONE]') continue;
+
+            try {
+              const parsed = JSON.parse(data);
+              const content = parsed.choices?.[0]?.delta?.content || '';
+              
+              if (content) {
+                accumulatedContent += content;
+                setMessages(prev => {
+                  const newMessages = [...prev];
+                  newMessages[newMessages.length - 1] = {
+                    role: 'assistant',
+                    content: accumulatedContent
+                  };
+                  return newMessages;
+                });
+              }
+            } catch (e) {
+              console.error('解析响应失败:', e);
+            }
+          }
         }
       }
 
-      setMessages(prev => [...prev, { role: 'bot', content: finalReply }]);
+    } catch (error: any) {
+      if (error.name === 'AbortError') {
+        console.log('请求已取消');
+        return;
+      }
+
+      console.error('发送消息失败:', error);
+      setMessages(prev => [...prev, {
+        role: 'assistant',
+        content: '抱歉，我现在有点忙不过来了😅 请稍后再试，或者你可以先看看我主页上的作品集哦！'
+      }]);
+    } finally {
       setIsTyping(false);
-    }, 1000);
+    }
   };
 
   return (
@@ -132,14 +191,14 @@ const DigitalChat = () => {
                         className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
                       >
                         <div className={`flex gap-2.5 max-w-[85%] ${msg.role === 'user' ? 'flex-row-reverse' : ''}`}>
-                          {msg.role === 'bot' && (
+                          {msg.role === 'assistant' && (
                             <Avatar className="w-7 h-7 shrink-0 shadow-sm mt-0.5">
                               <AvatarImage src={AVATAR_URL} />
                               <AvatarFallback className="bg-primary text-primary-foreground text-[10px]">CC</AvatarFallback>
                             </Avatar>
                           )}
                           <div
-                            className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm ${
+                            className={`px-3.5 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm whitespace-pre-wrap ${
                               msg.role === 'user'
                                 ? 'bg-primary text-primary-foreground rounded-tr-none'
                                 : 'bg-muted text-foreground rounded-tl-none border'
@@ -181,7 +240,7 @@ const DigitalChat = () => {
                     placeholder="输入您想问的内容..."
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    onKeyPress={(e) => e.key === 'Enter' && handleSend(input)}
+                    onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSend(input)}
                     disabled={isTyping}
                     className="rounded-full bg-background border-primary/20 focus-visible:ring-primary h-9"
                   />

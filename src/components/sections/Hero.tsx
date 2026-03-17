@@ -5,7 +5,7 @@ import { motion } from 'motion/react';
 const Hero = () => {
   return (
     <section className="relative pt-20 pb-12 px-6 overflow-hidden bg-gradient-to-b from-muted to-background">
-      <div className="max-w-4xl mx-auto flex flex-col items-center text-center">
+      <div className="max-w-4xl mx-auto flex flex-col items-center text-center bg-[#d5a2a200] bg-none">
         <motion.div
           initial={{ opacity: 0, scale: 0.9 }}
           animate={{ opacity: 1, scale: 1 }}

@@ -12,7 +12,7 @@ const Home = () => {
       <main className="pb-24 ml-[6px] mr-[16px] mt-[1px] mb-[1px]">
         <Hero />
         
-        <div className="container mx-auto">
+        <div className="container mx-auto bg-[#d5a2a200] bg-none border-[0px] border-dashed border-[rgb(226,233,233)]">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
