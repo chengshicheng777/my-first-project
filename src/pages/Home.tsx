@@ -12,12 +12,12 @@ const Home = () => {
       <main className="pb-24 ml-[6px] mr-[16px] mt-[1px] mb-[1px]">
         <Hero />
         
-        <div className="container mx-auto bg-[#d5a2a200] bg-none border-[0px] border-dashed border-[rgb(226,233,233)]">
+        <div className="container mx-auto">
           <motion.div
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="w-24 h-1 bg-primary/20 mx-auto my-8 rounded-full"
+            className="w-24 h-1 bg-primary/20 mx-auto my-6 rounded-full"
           />
           
           <Bio />
@@ -26,7 +26,7 @@ const Home = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="w-24 h-1 bg-primary/20 mx-auto my-8 rounded-full"
+            className="w-24 h-1 bg-primary/20 mx-auto my-6 rounded-full"
           />
           
           <Interests />
@@ -35,7 +35,7 @@ const Home = () => {
             initial={{ opacity: 0 }}
             whileInView={{ opacity: 1 }}
             viewport={{ once: true }}
-            className="w-24 h-1 bg-primary/20 mx-auto my-8 rounded-full"
+            className="w-24 h-1 bg-primary/20 mx-auto my-6 rounded-full"
           />
           
           <Portfolio />
@@ -44,7 +44,7 @@ const Home = () => {
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
-            className="max-w-4xl mx-auto px-6 py-12"
+            className="max-w-4xl mx-auto px-6 py-8"
           >
             <div className="relative rounded-3xl overflow-hidden aspect-[21/9] shadow-lg group">
               <img 
