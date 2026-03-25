@@ -106,3 +106,54 @@ export async function deletePortfolioFile(url: string): Promise<boolean> {
     return false;
   }
 }
+
+export interface HomepageContent {
+  id: number;
+  hero_name: string;
+  hero_intro_prefix: string;
+  hero_intro_highlight: string;
+  hero_intro_suffix: string;
+  hero_intro_line2: string;
+
+  contact_title: string;
+  contact_description: string;
+  contact_button_text: string;
+
+  interests: string[];
+  updated_at?: string;
+}
+
+// 获取主页可编辑的单例内容（id = 1）
+export async function getHomepageContent(): Promise<HomepageContent | null> {
+  const { data, error } = await supabase
+    .from('homepage_content')
+    .select('*')
+    .eq('id', 1)
+    .maybeSingle();
+
+  if (error) {
+    console.error('获取主页内容失败:', error);
+    return null;
+  }
+
+  return (data as HomepageContent) ?? null;
+}
+
+// 更新主页可编辑的单例内容（id = 1）
+export async function updateHomepageContent(
+  content: Omit<HomepageContent, 'id' | 'updated_at'>
+): Promise<void> {
+  const payload = {
+    id: 1,
+    ...content,
+  };
+
+  const { error } = await supabase
+    .from('homepage_content')
+    .upsert(payload, { onConflict: 'id' });
+
+  if (error) {
+    console.error('更新主页内容失败:', error);
+    throw error;
+  }
+}

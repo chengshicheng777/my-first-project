@@ -6,33 +6,33 @@ import { motion } from 'motion/react';
 const Bio = () => {
   const cards = [
     {
-      title: "现在主要在做",
-      content: "目前正在搭建个人主页，并用心整理关于3-6岁孩子成长的作品集，在小红书及B站分享育儿智慧。",
+      title: "最近在忙什么",
+      content: "一边学习 AI 工具，一边整理关于 3-6 岁孩子成长的内容，也会把真实经验分享到小红书和 B 站。",
       icon: <Rocket className="w-5 h-5 text-accent" />,
       delay: 0.1,
     },
     {
-      title: "特色介绍",
-      content: "一个有创意，理性，有逻辑，把复杂问题简单化，喜欢学习成长的妈妈。",
+      title: "我的风格",
+      content: "偏理性、讲逻辑，也愿意把复杂问题讲简单，希望内容既有温度也有方法。",
       icon: <Lightbulb className="w-5 h-5 text-primary" />,
       delay: 0.2,
     },
     {
-      title: "关注领域",
-      content: "深耕小红书及B站内容创作，特别关注AI对未来孩子成长的影响、知识整理与深度内容表达。",
+      title: "我在关注",
+      content: "关注 AI 时代下的亲子成长、知识整理和内容表达，尽量把每个话题聊得实用、可落地。",
       icon: <Brain className="w-5 h-5 text-accent" />,
       delay: 0.3,
     },
     {
-      title: "核心价值",
-      content: "致力于通过AI与逻辑思考，为家长们提供更具深度的育儿观点，让孩子在AI时代更好地成长。",
+      title: "我想带来的价值",
+      content: "希望通过 AI + 逻辑思考，给家长更多清晰、温和、能立刻用上的育儿思路。",
       icon: <Workflow className="w-5 h-5 text-primary" />,
       delay: 0.4,
     },
   ];
 
   return (
-    <section className="py-12 px-6 max-w-4xl mx-auto ml-[6px] mr-[6px] mt-[5px] mb-[5px]">
+    <section className="py-8 px-6 max-w-4xl mx-auto mt-[5px] mb-[5px]">
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {cards.map((card, idx) => (
           <motion.div

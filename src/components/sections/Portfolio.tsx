@@ -12,13 +12,16 @@ import { Play, Image as ImageIcon, Eye, Heart, MessageCircle, Trash2, Plus, Uplo
 import { motion } from 'motion/react';
 import { getPortfolioWorks, addPortfolioWork, deletePortfolioWork, uploadPortfolioFile, type PortfolioWork } from '@/db/api';
 import { toast } from 'sonner';
+import { supabase } from '@/db/supabase';
 
 const Portfolio = () => {
   const [activeTab, setActiveTab] = useState<'all' | 'video' | 'image'>('all');
   const [works, setWorks] = useState<PortfolioWork[]>([]);
   const [loading, setLoading] = useState(true);
+
   const [isUploadOpen, setIsUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [isOwner, setIsOwner] = useState(false);
 
   // 上传表单状态
   const [uploadForm, setUploadForm] = useState({
@@ -33,7 +36,35 @@ const Portfolio = () => {
 
   useEffect(() => {
     loadWorks();
+
+    checkOwnerPermission();
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      checkOwnerPermission();
+    });
+    return () => subscription.unsubscribe();
   }, []);
+
+  const checkOwnerPermission = async () => {
+    const ownerId = import.meta.env.VITE_PORTFOLIO_OWNER_ID as string | undefined;
+    const ownerEmail = import.meta.env.VITE_PORTFOLIO_OWNER_EMAIL as string | undefined;
+    const { data } = await supabase.auth.getSession();
+    const user = data.session?.user ?? null;
+
+    if (!user) {
+      setIsOwner(false);
+      return;
+    }
+
+    // 如果你没有在 env 里配置 owner，就把“已登录用户”视为管理员（方便你先快速管理）。
+    if (!ownerId && !ownerEmail) {
+      setIsOwner(true);
+      return;
+    }
+
+    const byId = ownerId ? user.id === ownerId : false;
+    const byEmail = ownerEmail ? user.email === ownerEmail : false;
+    setIsOwner(byId || byEmail);
+  };
 
   const loadWorks = async () => {
     setLoading(true);
@@ -47,6 +78,10 @@ const Portfolio = () => {
   );
 
   const handleDelete = async (id: string) => {
+    if (!isOwner) {
+      toast.error('仅管理员可删除作品');
+      return;
+    }
     if (!confirm('确定要删除这个作品吗？')) return;
 
     const success = await deletePortfolioWork(id);
@@ -66,6 +101,10 @@ const Portfolio = () => {
   };
 
   const handleUpload = async () => {
+    if (!isOwner) {
+      toast.error('仅管理员可上传作品');
+      return;
+    }
     if (!uploadForm.title || !uploadForm.description || !uploadForm.thumbnailFile || !uploadForm.mediaFile) {
       toast.error('请填写完整信息并上传文件');
       return;
@@ -116,122 +155,124 @@ const Portfolio = () => {
   };
 
   return (
-    <section className="py-12 px-6 max-w-6xl mx-auto">
+    <section className="py-8 px-6 max-w-6xl mx-auto">
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         whileInView={{ opacity: 1, y: 0 }}
         viewport={{ once: true }}
-        className="text-center mb-8"
+        className="text-center mb-6"
       >
         <div className="flex items-center justify-center gap-4 mb-4">
-          <h2 className="text-3xl md:text-4xl font-bold">我的作品集</h2>
-          <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
-            <DialogTrigger asChild>
-              <Button size="sm" className="rounded-full">
-                <Plus className="w-4 h-4 mr-1" />
-                上传作品
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <DialogHeader>
-                <DialogTitle>上传新作品</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 py-4">
-                <div className="space-y-2">
-                  <Label>作品类型</Label>
-                  <Select value={uploadForm.type} onValueChange={(v: 'video' | 'image') => setUploadForm(prev => ({ ...prev, type: v }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="image">图文</SelectItem>
-                      <SelectItem value="video">视频</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>标题</Label>
-                  <Input
-                    value={uploadForm.title}
-                    onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
-                    placeholder="输入作品标题"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>描述</Label>
-                  <Textarea
-                    value={uploadForm.description}
-                    onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
-                    placeholder="输入作品描述"
-                    rows={3}
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>发布平台</Label>
-                  <Select value={uploadForm.platform} onValueChange={(v: '小红书' | 'B站') => setUploadForm(prev => ({ ...prev, platform: v }))}>
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="小红书">小红书</SelectItem>
-                      <SelectItem value="B站">B站</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>标签（用逗号分隔）</Label>
-                  <Input
-                    value={uploadForm.tags}
-                    onChange={(e) => setUploadForm(prev => ({ ...prev, tags: e.target.value }))}
-                    placeholder="例如：AI教育,亲子互动,成长记录"
-                  />
-                </div>
-
-                <div className="space-y-2">
-                  <Label>封面图片</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept="image/*"
-                      onChange={(e) => handleFileChange(e, 'thumbnailFile')}
-                    />
-                    {uploadForm.thumbnailFile && (
-                      <Badge variant="secondary">{uploadForm.thumbnailFile.name}</Badge>
-                    )}
-                  </div>
-                </div>
-
-                <div className="space-y-2">
-                  <Label>{uploadForm.type === 'video' ? '视频文件' : '图片文件'}</Label>
-                  <div className="flex items-center gap-2">
-                    <Input
-                      type="file"
-                      accept={uploadForm.type === 'video' ? 'video/*' : 'image/*'}
-                      onChange={(e) => handleFileChange(e, 'mediaFile')}
-                    />
-                    {uploadForm.mediaFile && (
-                      <Badge variant="secondary">{uploadForm.mediaFile.name}</Badge>
-                    )}
-                  </div>
-                </div>
-
-                <Button onClick={handleUpload} disabled={uploading} className="w-full">
-                  {uploading ? '上传中...' : '确认上传'}
+          <h2 className="text-3xl md:text-4xl font-bold">最近分享</h2>
+          {isOwner && (
+            <Dialog open={isUploadOpen} onOpenChange={setIsUploadOpen}>
+              <DialogTrigger asChild>
+                <Button size="sm" className="rounded-full">
+                  <Plus className="w-4 h-4 mr-1" />
+                  上传作品
                 </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
+              </DialogTrigger>
+              <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+                <DialogHeader>
+                  <DialogTitle>上传新作品</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 py-4">
+                  <div className="space-y-2">
+                    <Label>作品类型</Label>
+                    <Select value={uploadForm.type} onValueChange={(v: 'video' | 'image') => setUploadForm(prev => ({ ...prev, type: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="image">图文</SelectItem>
+                        <SelectItem value="video">视频</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>标题</Label>
+                    <Input
+                      value={uploadForm.title}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, title: e.target.value }))}
+                      placeholder="输入作品标题"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>描述</Label>
+                    <Textarea
+                      value={uploadForm.description}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, description: e.target.value }))}
+                      placeholder="输入作品描述"
+                      rows={3}
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>发布平台</Label>
+                    <Select value={uploadForm.platform} onValueChange={(v: '小红书' | 'B站') => setUploadForm(prev => ({ ...prev, platform: v }))}>
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="小红书">小红书</SelectItem>
+                        <SelectItem value="B站">B站</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>标签（用逗号分隔）</Label>
+                    <Input
+                      value={uploadForm.tags}
+                      onChange={(e) => setUploadForm(prev => ({ ...prev, tags: e.target.value }))}
+                      placeholder="例如：AI教育,亲子互动,成长记录"
+                    />
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>封面图片</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileChange(e, 'thumbnailFile')}
+                      />
+                      {uploadForm.thumbnailFile && (
+                        <Badge variant="secondary">{uploadForm.thumbnailFile.name}</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label>{uploadForm.type === 'video' ? '视频文件' : '图片文件'}</Label>
+                    <div className="flex items-center gap-2">
+                      <Input
+                        type="file"
+                        accept={uploadForm.type === 'video' ? 'video/*' : 'image/*'}
+                        onChange={(e) => handleFileChange(e, 'mediaFile')}
+                      />
+                      {uploadForm.mediaFile && (
+                        <Badge variant="secondary">{uploadForm.mediaFile.name}</Badge>
+                      )}
+                    </div>
+                  </div>
+
+                  <Button onClick={handleUpload} disabled={uploading} className="w-full">
+                    {uploading ? '上传中...' : '确认上传'}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          )}
         </div>
-        <p className="text-muted-foreground text-lg max-w-2xl mx-auto">
-          记录孩子成长的每一个瞬间，分享育儿路上的思考与实践
+        <p className="text-muted-foreground text-lg max-w-2xl mx-auto leading-relaxed">
+          这里放着我近期的图文和视频，欢迎随便逛逛，也欢迎来和我聊聊你的想法。
         </p>
       </motion.div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-8">
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as any)} className="mb-6">
         <TabsList className="grid w-full max-w-md mx-auto grid-cols-3 bg-muted/50">
           <TabsTrigger value="all" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
             全部作品
@@ -261,17 +302,19 @@ const Portfolio = () => {
             >
               <Dialog>
                 <Card className="group relative overflow-hidden border-none shadow-md hover:shadow-xl transition-all duration-300 bg-card">
-                  <Button
-                    variant="destructive"
-                    size="icon"
-                    className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-full"
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      handleDelete(work.id);
-                    }}
-                  >
-                    <Trash2 className="w-4 h-4" />
-                  </Button>
+                  {isOwner && (
+                    <Button
+                      variant="destructive"
+                      size="icon"
+                      className="absolute top-2 left-2 z-10 opacity-0 group-hover:opacity-100 transition-opacity h-8 w-8 rounded-full"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleDelete(work.id);
+                      }}
+                    >
+                      <Trash2 className="w-4 h-4" />
+                    </Button>
+                  )}
 
                   <DialogTrigger asChild>
                     <div className="cursor-pointer">

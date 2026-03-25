@@ -12,8 +12,8 @@ const AVATAR_URL = "https://miaoda-site-img.cdn.bcebos.com/images/baidu_image_se
 
 const PRESET_QUESTIONS = [
   "3-6岁孩子如何建立亲子关系？",
-  "你最近在忙什么？有哪些作品？",
-  "怎么能联系上你？",
+  "我最近忙些什么？有哪些作品？",
+  "怎么联系上我？",
 ];
 
 interface Message {
@@ -141,13 +141,15 @@ const DigitalChat = () => {
       <motion.button
         initial={{ scale: 0, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
-        whileHover={{ scale: 1.1 }}
+        whileHover={{ scale: 1.06 }}
         whileTap={{ scale: 0.9 }}
         onClick={() => setIsOpen(true)}
-        className={`fixed bottom-6 right-6 z-50 p-4 rounded-full bg-primary text-primary-foreground shadow-2xl transition-all ${isOpen ? 'hidden' : 'flex'}`}
+        id="digital-chat-toggle"
+        className={`fixed bottom-5 right-5 md:bottom-8 md:right-8 z-50 px-4 py-3 rounded-full bg-primary text-primary-foreground shadow-2xl ring-2 ring-white/70 transition-all items-center gap-2 ${isOpen ? 'hidden' : 'flex'}`}
       >
-        <MessageCircle className="w-6 h-6" />
-        <span className="ml-2 font-medium hidden md:inline">咨询分身</span>
+        <MessageCircle className="w-5 h-5" />
+        <span className="font-semibold">聊聊育儿和 AI</span>
+        <span className="w-2 h-2 rounded-full bg-green-300 animate-pulse" />
       </motion.button>
 
       <AnimatePresence>
