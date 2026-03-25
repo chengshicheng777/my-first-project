@@ -1,0 +1,4 @@
+build:
+  command: "npx vite build"
+  distDir: "dist"
+  spa: true
